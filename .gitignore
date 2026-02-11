@@ -1,0 +1,14 @@
+# --- Local SDK / emulator binaries (do not commit) ---
+sdk/
+avd/
+
+# --- Local run artifacts ---
+emulator.log
+last_port
+audit_env.sh
+
+# --- OS/editor noise ---
+.DS_Store
+*.swp
+.idea/
+.vscode/
