@@ -3,26 +3,30 @@ set -euo pipefail
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_DIR="$HOME/.local/share/applications"
-DESKTOP_FILE="$APP_DIR/android-emulator-kit.desktop"
+APP_FILE="$APP_DIR/android-emulator-kit.desktop"
+DESKTOP_DIR="${XDG_DESKTOP_DIR:-$HOME/Desktop}"
+DESKTOP_FILE="$DESKTOP_DIR/android-emulator-kit.desktop"
 
-mkdir -p "$APP_DIR"
+mkdir -p "$APP_DIR" "$DESKTOP_DIR"
 
-# Use bash -lc so PATH/env behaves like a login shell
-cat > "$DESKTOP_FILE" <<EOT
+cat > "$APP_FILE" <<EOT
 [Desktop Entry]
 Type=Application
 Name=Android Emulator Kit
-Comment=Launch Android emulator for audits
-Exec=bash -lc '$ROOT_DIR/scripts/launch_emulator.sh pixel_api34'
+Comment=Launch Android emulator instances for audits
+Exec=bash -lc 'cd "$ROOT_DIR" && ./scripts/run_with_port.sh'
 Terminal=false
 Categories=Development;Emulator;
 Icon=android
 EOT
 
+chmod +x "$APP_FILE"
+cp "$APP_FILE" "$DESKTOP_FILE"
 chmod +x "$DESKTOP_FILE"
 
-# Optional refresh (doesn't exist on all distros, so don't fail if missing)
 command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
 
 echo "Desktop launcher created:"
+echo "  $APP_FILE"
+echo "Desktop icon created:"
 echo "  $DESKTOP_FILE"

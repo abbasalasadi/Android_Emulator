@@ -3,8 +3,10 @@ SHELL := /usr/bin/env bash
 # -----------------------
 # Config (edit if needed)
 # -----------------------
-AVD ?= pixel_api34
-DEFAULT_PORT ?= 5001
+INSTANCE ?= A
+AVD ?=
+DEFAULT_PORT ?=
+EMULATOR_PORT ?=
 GPU ?= swiftshader_indirect
 
 SCRIPTS := scripts
@@ -12,24 +14,16 @@ ENV_SH := $(SCRIPTS)/env.sh
 
 .PHONY: help doctor run start stop list-avds port show-url icon
 
-help: 
+help: ## Show available commands and variables
 	@echo ""
 	@echo "Android Emulator Kit (reusable for audits)"
 	@echo ""
-	@echo "Usage:"
-	@echo "  make <target> [AVD=...] [DEFAULT_PORT=...] [GPU=...]"
+	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z0-9_.-]+:.*## / {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST) | sort
 	@echo ""
-	@echo "Targets:"
-	@awk 'BEGIN {FS=":.*##"} \
-		/^[a-zA-Z0-9_.-]+:.*##/ { \
-			printf "  %-18s %s\n", $$1, $$2 \
-		}' $(MAKEFILE_LIST) | sort
-	@echo ""
-	@echo "Variables:"
-	@echo "  AVD=$(AVD) DEFAULT_PORT=$(DEFAULT_PORT) GPU=$(GPU)"
+	@echo "Variables: INSTANCE=$(INSTANCE) AVD=$(AVD) DEFAULT_PORT=$(DEFAULT_PORT) EMULATOR_PORT=$(EMULATOR_PORT) GPU=$(GPU)"
 	@echo ""
 
-doctor: ## Show tool + AVD status (doctor)
+doctor: ## Show tool and AVD status
 	@test -f "$(ENV_SH)" || (echo "Missing $(ENV_SH). Create env.sh first." && exit 1)
 	@source "$(ENV_SH)" && ./scripts/doctor.sh
 
@@ -37,23 +31,25 @@ list-avds: ## List available AVDs
 	@test -f "$(ENV_SH)" || (echo "Missing $(ENV_SH). Create env.sh first." && exit 1)
 	@source "$(ENV_SH)" && emulator -list-avds
 
-start: ## Start emulator (uses AVD=$(AVD), GPU=$(GPU))
+start: ## Start emulator directly using INSTANCE or explicit AVD/EMULATOR_PORT
 	@test -f "$(ENV_SH)" || (echo "Missing $(ENV_SH). Create env.sh first." && exit 1)
-	@source "$(ENV_SH)" && ./scripts/start_emulator.sh "$(AVD)" "$(GPU)"
+	@source "$(ENV_SH)" && INSTANCE="$(INSTANCE)" AVD="$(AVD)" EMULATOR_PORT="$(EMULATOR_PORT)" GPU="$(GPU)" ./scripts/run_with_port.sh
 
 stop: ## Stop all running emulators
 	@test -f "$(ENV_SH)" || (echo "Missing $(ENV_SH). Create env.sh first." && exit 1)
 	@source "$(ENV_SH)" && ./scripts/stop_emulators.sh
 
-run: ## Prompt for PORT (GUI if zenity) then start emulator; saves last_port + audit_env.sh
+run: ## Open the launcher popup, choose instance/backend port, then start that emulator
 	@test -f "$(ENV_SH)" || (echo "Missing $(ENV_SH). Create env.sh first." && exit 1)
-	@source "$(ENV_SH)" && AVD="$(AVD)" DEFAULT_PORT="$(DEFAULT_PORT)" GPU="$(GPU)" ./scripts/run_with_port.sh
+	@source "$(ENV_SH)" && INSTANCE="$(INSTANCE)" AVD="$(AVD)" DEFAULT_PORT="$(DEFAULT_PORT)" EMULATOR_PORT="$(EMULATOR_PORT)" GPU="$(GPU)" ./scripts/run_with_port.sh
 
-port: ## Print last chosen port (or DEFAULT_PORT if none saved)
-	@cat ./last_port 2>/dev/null || echo "$(DEFAULT_PORT)"
+port: ## Print saved backend port for INSTANCE (falls back to legacy file)
+	@instance_key="$$(printf '%s' '$(INSTANCE)' | tr '[:upper:]' '[:lower:]')"; \
+	file="./var/instances/$${instance_key}/last_port"; \
+	if [[ -f "$$file" ]]; then cat "$$file"; elif [[ -f ./last_port ]]; then cat ./last_port; else echo "unset"; fi
 
-show-url: ## Print last backend URL for emulator (http://10.0.2.2:PORT)
-	@PORT="$$(cat ./last_port 2>/dev/null || echo $(DEFAULT_PORT))"; echo "http://10.0.2.2:$${PORT}"
+show-url: ## Print backend URL for INSTANCE based on the saved port
+	@PORT="$$( $(MAKE) --no-print-directory port INSTANCE=$(INSTANCE) )"; echo "http://10.0.2.2:$${PORT}"
 
-icon: ## Create/update Desktop icon launcher for the emulator kit
+icon: ## Create or update the Desktop icon launcher for the emulator kit
 	@./scripts/create_desktop_icon.sh
