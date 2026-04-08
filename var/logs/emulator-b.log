@@ -11,7 +11,7 @@ INFO         |   Checking: hasSufficientHwGpu
 INFO         |      Ok: Hardware GPU compatibility checks are not required
 INFO         |   Checking: hasSufficientSystem
 INFO         |      Ok: System requirements to run avd: `pixel_api34_b` are met
-INFO         | Storing crashdata in: /tmp/android-abbas/emu-crash-36.4.9.db, detection is enabled for process: 2137410
+INFO         | Storing crashdata in: /tmp/android-abbas/emu-crash-36.4.9.db, detection is enabled for process: 2139678
 INFO         | Initializing gfxstream backend
 INFO         | android_startOpenglesRenderer: gpu info
 INFO         | 
@@ -96,10 +96,10 @@ INFO         | Warning: QObject::connect: Cannot queue arguments of type 'std::v
 (Make sure 'std::vector<android::emulation::control::SnapshotInfo>' is registered using qRegisterMetaType().) (:0, )
 INFO         | AVD supportsNativeGLES=1, supportsGuestAngle=0
 INFO         | Platform does not support Guest Angle
-INFO         | Created extended window in 902.953ms
-INFO         | Wait for emulator (pid 2137410) 20 seconds to shutdown gracefully before kill;you can set environment variable ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL(in seconds) to change the default value (20 seconds)
+INFO         | Created extended window in 4.288677s
+INFO         | Wait for emulator (pid 2139678) 20 seconds to shutdown gracefully before kill;you can set environment variable ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL(in seconds) to change the default value (20 seconds)
 
 WARNING      | Not saving state: RAM not mapped as shared
-INFO         | Saving snapshot 'default_boot' using 12 ms
+INFO         | Saving snapshot 'default_boot' using 11 ms
 ERROR        | stop: Not implemented
 WARNING      | Emulator client has not yet been configured.. Call configure me first!

@@ -61,18 +61,17 @@ show_error() {
 }
 
 selected_instances=()
-declare -A SELECTED_PORTS
 
 default_a_port="$(read_saved_port_for_instance A)"
 default_b_port="$(read_saved_port_for_instance B)"
 default_c_port="$(read_saved_port_for_instance C)"
 
-prompt_instances_and_ports() {
+prompt_instances() {
   if command -v zenity >/dev/null 2>&1; then
     local selected_raw
     selected_raw="$(zenity --list \
       --title="Android Emulator Launcher" \
-      --text="Select one or more emulator instances to launch." \
+      --text="Select one or more emulator instances to launch. Saved backend ports shown below will be used as-is." \
       --checklist \
       --column="Select" --column="Instance" --column="Default AVD" --column="Emulator Port" --column="Saved Backend Port" \
       TRUE "A" "pixel_api34_a" "5554" "$default_a_port" \
@@ -80,24 +79,10 @@ prompt_instances_and_ports() {
       FALSE "C" "pixel_api34_c" "5558" "$default_c_port" \
       --separator='|' \
       --height=320 --width=760 \
-      --ok-label="Next" --cancel-label="Cancel")" || exit 0
+      --ok-label="Launch" --cancel-label="Cancel")" || exit 0
 
     [[ -n "$selected_raw" ]] || exit 0
     IFS='|' read -r -a selected_instances <<< "$selected_raw"
-
-    local inst saved_port entered_port
-    for inst in "${selected_instances[@]}"; do
-      saved_port="$(read_saved_port_for_instance "$inst")"
-      entered_port="$(zenity --entry \
-        --title="Android Emulator Launcher" \
-        --text="Enter backend port for instance $inst.
-The emulator reaches the host backend at http://10.0.2.2:PORT" \
-        --entry-text="$saved_port" \
-        --width=420 \
-        --ok-label="Next" \
-        --cancel-label="Cancel")" || exit 0
-      SELECTED_PORTS["$inst"]="$entered_port"
-    done
   else
     local selected_input
     printf 'Choose instance(s) to launch [A,B,C] comma-separated (default A): ' >&2
@@ -105,18 +90,10 @@ The emulator reaches the host backend at http://10.0.2.2:PORT" \
     selected_input="${selected_input:-A}"
     selected_input="$(printf '%s' "$selected_input" | tr '[:lower:]' '[:upper:]' | tr ',' ' ')"
     read -r -a selected_instances <<< "$selected_input"
-
-    local inst saved_port entered_port
-    for inst in "${selected_instances[@]}"; do
-      saved_port="$(read_saved_port_for_instance "$inst")"
-      printf 'Enter backend PORT for instance %s (default %s): ' "$inst" "$saved_port" >&2
-      read -r entered_port
-      SELECTED_PORTS["$inst"]="${entered_port:-$saved_port}"
-    done
   fi
 }
 
-prompt_instances_and_ports
+prompt_instances
 
 if [[ ${#selected_instances[@]} -eq 0 ]]; then
   exit 0
@@ -139,7 +116,7 @@ for selected_instance in "${selected_instances[@]}"; do
 
   AVD_NAME="${AVD:-$DEFAULT_AVD}"
   EMULATOR_PORT="${EMULATOR_PORT:-$DEFAULT_EMULATOR_PORT}"
-  PORT="${SELECTED_PORTS[$selected_instance]:-$DEFAULT_BACKEND_PORT}"
+  PORT="$(read_saved_port_for_instance "$selected_instance")"
 
   if ! validate_port "$PORT"; then
     show_error "Invalid port" "Instance $selected_instance has invalid backend port '$PORT'. Port must be a number between 1 and 65535."
